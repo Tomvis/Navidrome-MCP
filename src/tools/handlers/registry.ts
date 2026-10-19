@@ -36,6 +36,7 @@ import { createLastFmToolCategory } from './lastfm-handlers.js';
 import { createLyricsToolCategory } from './lyrics-handlers.js';
 import { createTagToolCategory } from './tag-handlers.js';
 import { createPlaybackToolCategory } from './playback-handlers.js';
+import { readToolAllowlist, TOOL_ALLOWLIST_ENV } from '../../config/tool-allowlist.js';
 
 export interface ToolCategory {
   tools: Tool[];
@@ -65,6 +66,21 @@ export class ToolRegistry {
 
   hasTool(name: string): boolean {
     return this.toolsByName.has(name);
+  }
+
+  /**
+   * Drop every tool not in `names`. An unknown name throws, so a tool that upstream renamed
+   * or a feature flag left out stops the server instead of silently vanishing.
+   */
+  restrictTo(names: readonly string[]): void {
+    const unknown = names.filter((name) => !this.toolsByName.has(name));
+    if (unknown.length > 0) {
+      throw new Error(`${TOOL_ALLOWLIST_ENV} names unregistered tools: ${unknown.join(', ')}`);
+    }
+    const keep = new Set(names);
+    for (const name of [...this.toolsByName.keys()]) {
+      if (!keep.has(name)) this.toolsByName.delete(name);
+    }
   }
 
   async handleToolCall(name: string, args: unknown): Promise<unknown> {
@@ -116,6 +132,11 @@ export function buildToolRegistry(client: NavidromeClient, config: Config): Tool
   if (config.features.playback) {
     // createRuntime() configures the engine and the entry point attaches the scrobbler, since both outlive tool registration.
     registry.register(createPlaybackToolCategory(client, config));
+  }
+
+  const allowlist = readToolAllowlist();
+  if (allowlist !== null) {
+    registry.restrictTo(allowlist);
   }
 
   return registry;

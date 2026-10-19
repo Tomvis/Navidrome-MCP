@@ -469,6 +469,8 @@ When a token is set, every `/mcp` request must carry `Authorization: Bearer <tok
 
 The transport also reads `MCP_TRANSPORT` (`stdio` or `http`), `MCP_HTTP_HOST`, `MCP_HTTP_PORT`, `MCP_HTTP_EXPOSE` (`true` to bind all interfaces), `MCP_HTTP_AUTH_TOKEN`, `MCP_HTTP_ALLOWED_HOSTS`, and `MCP_HTTP_ALLOWED_ORIGINS` from the environment. The last two take comma-separated lists. The web UI has a matching `WEBUI_*` family (`WEBUI_ENABLED`, `WEBUI_PORT`, `WEBUI_HOST`, `WEBUI_EXPOSE`, `WEBUI_AUTO_OPEN_BROWSER`, `WEBUI_PERSIST_AFTER_MCP_EXIT`, `WEBUI_VISUALIZER`). These follow the rule in [Headless Machines and Containers](#headless-machines-and-containers). They also pre-fill the settings form on first run.
 
+**Tool allowlist (Tomvis fork).** `NAVIDROME_TOOL_ALLOWLIST` takes a comma-separated list of tool names; only those are listed and callable. It is env-only, and a name that is not registered (renamed upstream, or left out by a feature flag) stops the server at startup.
+
 > **Single account, shared state.** One process serves every HTTP session with one Navidrome account. So a `set_active_libraries` call changes the library filter for every connected session.
 
 > **Security.** The server holds an authenticated Navidrome session, so anyone who reaches an open port controls your library. When the port is reachable beyond loopback, set an auth token or limit access with a firewall, a Kubernetes NetworkPolicy, or a reverse proxy that adds TLS. Keep the default `stdio` transport unless you need remote access.
